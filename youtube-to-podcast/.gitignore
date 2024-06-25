@@ -1,0 +1,6 @@
+/target
+.env
+credentials/credentials.json
+samples/*
+downloads/*
+.idea
