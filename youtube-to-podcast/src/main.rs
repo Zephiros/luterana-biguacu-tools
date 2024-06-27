@@ -4,6 +4,7 @@ use chrono::Utc;
 use dotenv::dotenv;
 use std::env;
 use once_cell::sync::Lazy;
+use regex::Regex;
 
 mod youtube;
 mod spreadsheet;
@@ -33,6 +34,7 @@ struct SpreadsheetTuple {
     link: String,
     start_time: String,
     end_time: String,
+    is_downloaded: bool,
     is_online: bool
 }
 
@@ -57,6 +59,11 @@ fn extract_year(date_str: &str) -> i32 {
     return date_time.year();
 }
 
+fn extract_title(input: &str) -> String {
+    let re = Regex::new(r"^Mensagem \d{2}/\d{2} - ").unwrap();
+    re.replace(input, "").to_string()
+}
+
 fn list_spreadsheet_tuples(sheet_name: &str, range: &str, debug: bool) -> Vec<SpreadsheetTuple> {
     let mut tuples: Vec<SpreadsheetTuple> = Vec::new();
     let spreadsheet_list = spreadsheet::list(debug, sheet_name, range);
@@ -73,6 +80,7 @@ fn list_spreadsheet_tuples(sheet_name: &str, range: &str, debug: bool) -> Vec<Sp
                 link: row[2].clone(),
                 start_time: row[3].clone(),
                 end_time: row[4].clone(),
+                is_downloaded: if row[5].clone() == "Sim" { true } else { false },
                 is_online: if row[6].clone() == "Sim" { true } else { false }
             };
             tuples.push(tuple);
@@ -97,7 +105,7 @@ fn get_result() -> MainResult {
                 let title_to_find = item.snippet.title.replace(" - Luterana Biguaçu", "");
                 if title_to_find == spreadsheet.title {
                     item_found = true;
-                    if !spreadsheet.is_online && spreadsheet.start_time != "00:00:00" && spreadsheet.end_time != "00:00:00" {
+                    if !spreadsheet.is_online && !spreadsheet.is_downloaded && spreadsheet.start_time != "00:00:00" && spreadsheet.end_time != "00:00:00" {
                         items_to_download.push(VideoToDownload {
                             id: video_id.to_string(),
                             title: spreadsheet.title.clone(),
@@ -119,6 +127,7 @@ fn get_result() -> MainResult {
                     String::from("00:00:00"),
                     String::from("00:00:00"),
                     String::from("00:00:00"),
+                    String::from("Não"),
                     String::from("Não")
                 ]);
             }
@@ -131,9 +140,6 @@ fn get_result() -> MainResult {
     };
 }
 
-// @TODO cache json/data file given days
-// @TODO save to .git
-
 fn main() {
     println!("Ready to start!");
 
@@ -145,12 +151,15 @@ fn main() {
         let video_id = &item.id.to_string();
 
         println!(
-            "  [+] Downloading video (ID: {:?}). Start on {:?} and finish on {:?}",
-            video_id, &item.start_time.to_string(), &item.end_time.to_string()
+            "  [+] Downloading video {:?} (ID: {:?}). Start on {:?} and finish on {:?}",
+            item.title, video_id, &item.start_time.to_string(), &item.end_time.to_string()
         );
+
+        let filename = extract_title(&item.title);
 
         youtube::download_video(
             video_id,
+            &filename,
             &item.start_time.to_string(),
             &item.end_time.to_string(),
             &CONFIG.download_folder
@@ -158,7 +167,7 @@ fn main() {
 
         youtube::download_video_cover(
             video_id,
-            &item.title.to_string().replace("/", "-"),
+            &filename,
             &CONFIG.download_folder
         );
     }

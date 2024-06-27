@@ -108,8 +108,9 @@ pub fn list(debug: bool) -> VideoListResponse {
     return video_list;
 }
 
-pub fn download_video(video_code: &str, start_time: &str, end_time: &str, video_folder: &str) {
+pub fn download_video(video_code: &str, filename: &str, start_time: &str, end_time: &str, video_folder: &str) {
     let url = format!("https://www.youtube.com/watch?v={}", video_code);
+    let output_template = format!("{}.%(ext)s", filename);
 
     let result = YoutubeDl::new(url)
         .extra_arg("--extract-audio")
@@ -117,6 +118,8 @@ pub fn download_video(video_code: &str, start_time: &str, end_time: &str, video_
         .extra_arg("mp3")
         .extra_arg("--postprocessor-args")
         .extra_arg(format!("-ss {} -to {}", start_time, end_time))
+        .extra_arg("-o")
+        .extra_arg(&output_template)
         .download_to(video_folder);
 
     match result {

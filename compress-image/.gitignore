@@ -1,0 +1,6 @@
+/target
+.env
+output/*
+samples/*
+downloads/*
+.idea
