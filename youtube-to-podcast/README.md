@@ -7,7 +7,7 @@ This project utilizes Rust to prepare YouTube video to be uploaded on Podcast.
 ### Prerequisites
 
 - Rust Programming Language ([Install Rust](https://www.rust-lang.org/tools/install))
-- TinyPNG API Key ([Sign up for TinyPNG](https://tinypng.com/developers))
+- YouTube API Key ([Getting Started on YouTube API Key](https://developers.google.com/youtube/v3/getting-started))
 
 ### Set up Environment Variables
 
